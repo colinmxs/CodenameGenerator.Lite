@@ -10,8 +10,10 @@ init:
 build_script:
 - ps: >-
     dotnet restore    
+
     dotnet build -c Release
 test_script:
 - ps: >-
     cd tests/codenamegenerator.lite.tests
+
     dotnet test -c Release --no-build
