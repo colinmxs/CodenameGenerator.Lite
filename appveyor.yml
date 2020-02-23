@@ -1,5 +1,8 @@
 version: 1.2.{build}
 image: Visual Studio 2017
+environment:
+  api_key:
+    secure: ypTf4wndO2Qd15JcOvncsnV8APna69YxVOvQLdkWrtguZUBa8TZlq47Qy+HMt7PT
 branches:
   only:
   - master
@@ -8,8 +11,18 @@ skip_commits:
 init:
   - git config --global core.autocrlf true
 build_script:
-- ps: >-
-    dotnet restore    
+- ps: >-    
+    dotnet restore
+
+    $xmlPath = "$env:appveyor_build_folder\src\CodenameGenerator.Lite\CodenameGenerator.Lite.csproj"
+
+    $xml = [xml](get-content $xmlPath)
+
+    $propertyGroup = $xml.Project.PropertyGroup
+
+    $propertyGroup.Version = $env:appveyor_build_version
+
+    $xml.Save($xmlPath)
 
     dotnet build -c Release
 test_script:
@@ -17,3 +30,10 @@ test_script:
     cd tests/codenamegenerator.lite.tests
 
     dotnet test -c Release --no-build
+on_success:
+- ps: >-
+    if(!$env:APPVEYOR_PULL_REQUEST_NUMBER)
+    {
+      nuget.exe setApiKey $env:api_key -source https://www.nuget.org
+      nuget push "$env:appveyor_build_folder\src\CodenameGenerator.Lite\bin\Release\CodenameGenerator.Lite.$env:appveyor_build_version.nupkg" -source https://www.nuget.org
+    }
